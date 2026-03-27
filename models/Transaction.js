@@ -1,4 +1,4 @@
-// models/Transaction.js
+// models/Transaction.js (Updated)
 import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
@@ -23,7 +23,7 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['CREDIT', 'DEBIT', 'TRANSFER', 'RECHARGE', 'BILL_PAYMENT'],
+    enum: ['CREDIT', 'DEBIT', 'TRANSFER', 'RECHARGE', 'BILL_PAYMENT', 'WITHDRAWAL'],
     required: true
   },
   description: {
@@ -44,7 +44,7 @@ const transactionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['SUCCESS', 'PENDING', 'FAILED'],
+    enum: ['SUCCESS', 'PENDING', 'FAILED', 'SCHEDULED'],
     default: 'PENDING'
   },
   referenceNumber: {
@@ -59,11 +59,30 @@ const transactionSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now
+  },
+  scheduledDate: {
+    type: Date,
+    default: null
+  },
+  isRecurring: {
+    type: Boolean,
+    default: false
+  },
+  recurringType: {
+    type: String,
+    enum: ['DAILY', 'WEEKLY', 'MONTHLY', null],
+    default: null
+  },
+  transferMessage: {
+    type: String,
+    default: null
   }
 });
 
 transactionSchema.index({ userId: 1, date: -1 });
 transactionSchema.index({ accountId: 1, date: -1 });
+transactionSchema.index({ status: 1 });
+transactionSchema.index({ scheduledDate: 1 });
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 export default Transaction;

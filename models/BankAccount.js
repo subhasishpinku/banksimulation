@@ -1,4 +1,4 @@
-// models/BankAccount.js
+// models/BankAccount.js (Updated)
 import mongoose from 'mongoose';
 
 const bankAccountSchema = new mongoose.Schema({
@@ -27,6 +27,14 @@ const bankAccountSchema = new mongoose.Schema({
   bankName: {
     type: String,
     required: true
+  },
+  country: {
+    type: String,
+    default: 'India'
+  },
+  currency: {
+    type: String,
+    default: 'INR'
   },
   bankLogo: {
     type: String,

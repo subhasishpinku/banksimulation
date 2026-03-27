@@ -3,7 +3,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-
+import cron from 'node-cron';
+import { processScheduledTransactions } from './services/transactionProcessor.js';
 dotenv.config();
 
 const app = express();
@@ -40,6 +41,15 @@ mongoose.connect(MONGODB_URI, {
 
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
+});
+
+// Run every minute to process scheduled transactions
+cron.schedule('* * * * *', async () => {
+  console.log('Checking for scheduled transactions...');
+  const result = await processScheduledTransactions();
+  if (result.processed > 0) {
+    console.log(`Processed ${result.processed} scheduled transactions`);
+  }
 });
 
 mongoose.connection.on('disconnected', () => {
