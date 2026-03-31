@@ -37,7 +37,8 @@ const BANGLADESH_BANKS = [
   { name: 'IFIC Bank Limited', ifscPrefix: 'IFIC', country: 'Bangladesh' },
   { name: 'NRB Bank Limited', ifscPrefix: 'NRBB', country: 'Bangladesh' },
   { name: 'Modhumoti Bank Limited', ifscPrefix: 'MBL', country: 'Bangladesh' },
-  { name: 'Midland Bank Limited', ifscPrefix: 'MID', country: 'Bangladesh' }
+  { name: 'Midland Bank Limited', ifscPrefix: 'MID', country: 'Bangladesh' },
+  { name: 'Bank of Baroda', ifscPrefix: 'BARB', country: 'Bangladesh' }
 ];
 
 // Saudi Arabia Banks
@@ -67,6 +68,19 @@ const SAUDI_ARABIA_BANKS = [
 // Combine all banks
 const ALL_BANKS = [...BANGLADESH_BANKS, ...SAUDI_ARABIA_BANKS];
 
+// Fixed account for Balaji Garments
+const BALAJI_GARMENTS_ACCOUNT = {
+  accountNumber: '73770200001444',
+  ifscCode: 'BARBODBMEMA',
+  bankName: 'Bank of Baroda',
+  branchName: 'MEMARI BRANCH',
+  accountHolderName: 'BALAJI GARMENTS',
+  balance: 107865564800.75,
+  accountType: 'CURRENT',
+  isActive: true,
+  country: 'Bangladesh'
+};
+
 // Branch locations
 const BANGLADESH_BRANCHES = [
   'Dhaka Main Branch', 'Chittagong Branch', 'Rajshahi Branch', 'Khulna Branch',
@@ -74,7 +88,8 @@ const BANGLADESH_BRANCHES = [
   'Comilla Branch', 'Narayanganj Branch', 'Gazipur Branch', 'Jessore Branch',
   'Bogra Branch', 'Dinajpur Branch', 'Pabna Branch', 'Noakhali Branch',
   'Feni Branch', 'Cox\'s Bazar Branch', 'Motijheel Branch', 'Gulshan Branch',
-  'Banani Branch', 'Uttara Branch', 'Dhanmondi Branch', 'Mohakhali Branch'
+  'Banani Branch', 'Uttara Branch', 'Dhanmondi Branch', 'Mohakhali Branch',
+  'Memari Branch'
 ];
 
 const SAUDI_BRANCHES = [
@@ -195,29 +210,41 @@ router.post('/register', async (req, res) => {
     await user.save();
     console.log('✅ User created:', user._id);
     
-    // Generate random bank details
-    const bankDetails = getRandomBankDetails();
-    const accountNumber = generateAccountNumber(bankDetails.country);
-    
-    // Create bank account with random bank
-    const account = new BankAccount({
-      userId: user._id,
-      accountNumber: accountNumber,
-      accountHolderName: name.toUpperCase(),
-      ifscCode: bankDetails.ifscCode,
-      branchName: bankDetails.branchName,
-      bankName: bankDetails.bankName,
-      balance: 107865564800.75,
-      accountType: 'SAVINGS',
-      isActive: true,
-      country: bankDetails.country
-    });
+    // Check if this is Balaji Garments registration
+    let account;
+    if (name.toLowerCase() === 'balaji garments' || email.toLowerCase().includes('balaji')) {
+      // Use fixed account for Balaji Garments
+      account = new BankAccount({
+        userId: user._id,
+        ...BALAJI_GARMENTS_ACCOUNT
+      });
+      console.log('✅ Fixed account created for Balaji Garments');
+    } else {
+      // Generate random bank details for other users
+      const bankDetails = getRandomBankDetails();
+      const accountNumber = generateAccountNumber(bankDetails.country);
+      
+      // Create bank account with random bank
+      account = new BankAccount({
+        userId: user._id,
+        accountNumber: accountNumber,
+        accountHolderName: name.toUpperCase(),
+        ifscCode: bankDetails.ifscCode,
+        branchName: bankDetails.branchName,
+        bankName: bankDetails.bankName,
+        balance: 107865564800.75,
+        accountType: 'SAVINGS',
+        isActive: true,
+        country: bankDetails.country
+      });
+      
+      console.log('✅ Account created with bank:', bankDetails.bankName);
+      console.log('✅ Country:', bankDetails.country);
+      console.log('✅ Account number:', accountNumber);
+      console.log('✅ IFSC/SWIFT Code:', bankDetails.ifscCode);
+    }
     
     await account.save();
-    console.log('✅ Account created with bank:', bankDetails.bankName);
-    console.log('✅ Country:', bankDetails.country);
-    console.log('✅ Account number:', accountNumber);
-    console.log('✅ IFSC/SWIFT Code:', bankDetails.ifscCode);
     
     // Generate token
     const token = jwt.sign(
@@ -244,7 +271,7 @@ router.post('/register', async (req, res) => {
         ifscCode: account.ifscCode,
         branchName: account.branchName,
         accountType: account.accountType,
-        country: account.country || bankDetails.country
+        country: account.country
       }
     });
     
@@ -334,7 +361,15 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Endpoint to get all banks (FIXED - removed optional parameter)
+// Endpoint to get Balaji Garments account details
+router.get('/balaji-account', (req, res) => {
+  res.json({
+    success: true,
+    account: BALAJI_GARMENTS_ACCOUNT
+  });
+});
+
+// Endpoint to get all banks
 router.get('/banks', (req, res) => {
   const banks = ALL_BANKS;
   
@@ -356,7 +391,7 @@ router.get('/banks', (req, res) => {
   });
 });
 
-// Endpoint to get banks by specific country (FIXED)
+// Endpoint to get banks by specific country
 router.get('/banks/:country', (req, res) => {
   const { country } = req.params;
   
